@@ -2,6 +2,7 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include <ctime>
 using namespace std;
 
 class genotype
@@ -99,10 +100,94 @@ public:
 		calcFitness();
 	}
 
+	void swapGenes(int position1, int position2)
+	{
+		vector<bool> tempGene;
+		for (int i = 0; i < 3; i++)
+		{
+			tempGene.push_back(genes[(position1 * 3) + i]);
+		}
+		for (int i = 0; i < 3; i++)
+		{
+			genes[(position1 * 3) + i] = genes[(position2 * 3) + i];
+			genes[(position2 * 3) + i] = tempGene[i];
+		}
+		calcFitness();
+	}
+
+	vector<genotype> cutAndCrossfill(genotype other)
+	{
+		
+		genotype offspring1, offspring2;
+		vector<bool> parent1, parent2;
+		parent1 = getConfiguration();
+		parent2 = other.getConfiguration();
+
+		int cutPoint = 1 + rand() % (7-1);
+		for (int i = 0; i < cutPoint; i++){
+			for (int o = 0; o < 3; o++)
+			{
+				offspring1.setSpecificGene(i * 3 + o, parent2[i * 3 + o]);
+				offspring2.setSpecificGene(i * 3 + o, parent1[i * 3 + o]);
+			}
+		}
+
+		vector<int> existInC1, existInC2;
+		vector<int> configC1, configC2, configC3, configC4;
+		configC1 = offspring1.decryptFromBool();
+		configC2 = offspring2.decryptFromBool();
+		configC3 = decryptFromBool();
+		configC4 = other.decryptFromBool();
+		
+		
+		configC1.resize(cutPoint);
+		configC2.resize(cutPoint);
+
+		for (int i = cutPoint; i < 8; i++)
+		{
+			for (int o = 0; o < 8; o++)
+			{
+				if (find(configC1.begin(), configC1.end(), configC3[o]) == configC1.end()){
+					configC1.push_back(configC3[o]);
+				}
+			}
+			for (int o = 0; o < 8; o++)
+			{
+				if (find(configC2.begin(), configC2.end(), configC4[o]) == configC2.end()){
+					configC2.push_back(configC4[o]);
+				}
+			}			
+		}
+
+		for (int i = 0; i < 8; i++)
+		{
+			offspring1.setPosition(i, genetypes[configC1[i]]);
+			offspring2.setPosition(i, genetypes[configC2[i]]);
+		}
+
+		vector<genotype> returnedOffsprings;
+		offspring1.calcFitness();
+		offspring2.calcFitness();
+
+		returnedOffsprings.push_back(offspring1);
+		returnedOffsprings.push_back(offspring2);
+
+		return returnedOffsprings;
+	}
+
+	bool getSpecificGene(int position)
+	{
+		return genes[position];
+	}
+
+	void setSpecificGene(int position, bool state)
+	{
+		genes[position] = state;
+	}
+
 	double calcFitness()
 	{
 		double collisions = 0;
-		if (fitness < 0){
 			vector<int> configuration = decryptFromBool();
 			for (int i = 0; i < 8; i++)
 			{
@@ -116,18 +201,13 @@ public:
 			}
 			fitness = 1 / (1 + collisions);
 			return fitness;
-		}
-		else{
-			return fitness;
-		}
 	}
-
 };
 
 struct less_than_key
 {
 	inline bool operator() (const genotype& genotype1, const genotype& genotype2)
 	{
-		return (genotype1.fitness < genotype2.fitness);
+		return (genotype1.fitness > genotype2.fitness);
 	}
 };
