@@ -10,10 +10,11 @@ class genotype
 private:
 	vector<bool> genes;
 	vector<vector<bool> > genetypes;
-	
+
 
 public:
 	double fitness = -1;
+	double altFitness = -1;
 
 	genotype(){
 		//Inicializando os genes//
@@ -34,7 +35,7 @@ public:
 		genetypes.push_back(gene); gene.clear();
 		gene.push_back(true); gene.push_back(true); gene.push_back(true);
 		genetypes.push_back(gene);
-		
+
 		//Inicializando genotipo//
 		for (int i = 0; i < 24; i++)
 		{
@@ -51,7 +52,7 @@ public:
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			genes[(position) * 3 + i] = new_genes[i];
+			genes[(position)* 3 + i] = new_genes[i];
 		}
 	}
 
@@ -117,13 +118,13 @@ public:
 
 	vector<genotype> cutAndCrossfill(genotype other)
 	{
-		
+
 		genotype offspring1, offspring2;
 		vector<bool> parent1, parent2;
 		parent1 = getConfiguration();
 		parent2 = other.getConfiguration();
 
-		int cutPoint = 1 + rand() % (7-1);
+		int cutPoint = 1 + rand() % (7 - 1);
 		for (int i = 0; i < cutPoint; i++){
 			for (int o = 0; o < 3; o++)
 			{
@@ -138,8 +139,8 @@ public:
 		configC2 = offspring2.decryptFromBool();
 		configC3 = decryptFromBool();
 		configC4 = other.decryptFromBool();
-		
-		
+
+
 		configC1.resize(cutPoint);
 		configC2.resize(cutPoint);
 
@@ -156,7 +157,7 @@ public:
 				if (find(configC2.begin(), configC2.end(), configC4[o]) == configC2.end()){
 					configC2.push_back(configC4[o]);
 				}
-			}			
+			}
 		}
 
 		for (int i = 0; i < 8; i++)
@@ -168,6 +169,7 @@ public:
 		vector<genotype> returnedOffsprings;
 		offspring1.calcFitness();
 		offspring2.calcFitness();
+
 
 		returnedOffsprings.push_back(offspring1);
 		returnedOffsprings.push_back(offspring2);
@@ -187,20 +189,45 @@ public:
 
 	double calcFitness()
 	{
+		calcFitnessAlt();
 		double collisions = 0;
-			vector<int> configuration = decryptFromBool();
-			for (int i = 0; i < 8; i++)
+		vector<int> configuration = decryptFromBool();
+		for (int i = 0; i < 8; i++)
+		{
+			for (int o = i + 1; o < 8; o++)
 			{
-				for (int o = i+1; o < 8; o++)
+				if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
 				{
-					if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
-					{
-						collisions++;
-					}
+					collisions++;
 				}
 			}
-			fitness = 1 / (1 + collisions);
-			return fitness;
+		}
+		fitness = 1 / (1 + collisions);
+		return fitness;
+	}
+
+	double calcFitnessAlt()
+	{
+		double longestStreakNoCollision = 0;
+		double noCollision = 0;
+		vector<int> configuration = decryptFromBool();
+		for (int i = 0; i < 8; i++)
+		{
+			for (int o = i + 1; o < 8; o++)
+			{
+				if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
+				{
+					noCollision = 0;
+				}
+			}
+			noCollision++;
+			if (longestStreakNoCollision < noCollision)
+			{
+				longestStreakNoCollision = noCollision;
+			}
+		}
+		altFitness = longestStreakNoCollision/8;
+		return altFitness;
 	}
 };
 
@@ -209,5 +236,13 @@ struct less_than_key
 	inline bool operator() (const genotype& genotype1, const genotype& genotype2)
 	{
 		return (genotype1.fitness > genotype2.fitness);
+	}
+};
+
+struct less_than_key_alt
+{
+	inline bool operator() (const genotype& genotype1, const genotype& genotype2)
+	{
+		return (genotype1.altFitness > genotype2.altFitness);
 	}
 };
