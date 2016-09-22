@@ -10,7 +10,8 @@ class genotype
 private:
 	vector<bool> genes;
 	vector<vector<bool> > genetypes;
-
+	vector<bool> fwdColliders;
+	vector<bool> bckColliders;
 
 public:
 	double fitness = -1;
@@ -116,6 +117,55 @@ public:
 		calcFitness();
 	}
 
+	void swapGenesAlt()
+	{
+		tagColliders();
+		bool swapped;
+		for (int i = 0; i < 8; i++)
+		{
+			if (fwdColliders[i] == true)
+			{
+				swapped = false;
+				int o = rand() % 8;
+				while (fwdColliders[o]!=false)
+				{
+					o = rand()  % 8;
+				}
+				swapGenes(i, o);
+			}
+		}
+		calcFitness();
+	}
+
+	void tagColliders()
+	{
+		vector<int> configuration = decryptFromBool();
+		for (int i = 0; i < 8; i++)
+		{
+			bool collider = false;
+			for (int o = i + 1; o < 8; o++)
+			{
+				if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
+				{
+					collider = true;
+				}
+			}
+			fwdColliders.push_back(collider);
+		}
+		for (int i = 7; i > 0; i--)
+		{
+			bool collider = false;
+			for (int o = i-1; o > 0; o--)
+			{
+				if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
+				{
+					collider = true;
+				}
+			}
+			bckColliders.push_back(collider);
+		}
+	}
+
 	vector<genotype> cutAndCrossfill(genotype other)
 	{
 
@@ -213,14 +263,14 @@ public:
 		vector<int> configuration = decryptFromBool();
 		for (int i = 0; i < 8; i++)
 		{
+			noCollision++;
 			for (int o = i + 1; o < 8; o++)
 			{
 				if ((configuration[i] == configuration[o] + (o - i)) || (configuration[i] == configuration[o] + (i - o)))
 				{
 					noCollision = 0;
 				}
-			}
-			noCollision++;
+			}			
 			if (longestStreakNoCollision < noCollision)
 			{
 				longestStreakNoCollision = noCollision;
